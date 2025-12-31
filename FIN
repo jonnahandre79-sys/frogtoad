@@ -1,0 +1,187 @@
+import time
+import random
+import sys
+import os
+import json
+
+# ==================== VISUAL & AUDIO ENGINE ====================
+
+class Color:
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    BLUE = '\033[94m'
+    CYAN = '\033[96m'
+    MAGENTA = '\033[95m'
+    RED = '\033[91m'
+    BOLD = '\033[1m'
+    END = '\033[0m'
+
+class Icons:
+    FROG = "🐸"
+    TOAD = "🐍"
+    COIN = "🪙"
+    HEART = "❤️"
+    ENERGY = "⚡"
+    SAVE = "💾"
+
+def play_sound(pattern="short"):
+    """Triggers system bell for 8-bit audio effects."""
+    if pattern == "short":
+        sys.stdout.write('\a')
+    elif pattern == "jingle":
+        for _ in range(3): sys.stdout.write('\a'); time.sleep(0.1)
+    elif pattern == "rising":
+        for i in range(4): sys.stdout.write('\a'); time.sleep(0.15)
+    sys.stdout.flush()
+
+def clear_screen():
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+def type_print(text, delay=0.02):
+    for char in text:
+        sys.stdout.write(char)
+        sys.stdout.flush()
+        time.sleep(delay)
+    print()
+
+# ==================== SAVE SYSTEM ====================
+
+SAVE_FILE = "frog_and_toad_save.json"
+
+def save_game(state):
+    data = {
+        "friendship": state.friendship,
+        "inventory": state.inventory,
+        "chapters_completed": state.chapters_completed,
+        "health": state.health,
+        "energy": state.energy,
+        "money": state.money,
+        "day": state.day,
+        "achievements": state.achievements
+    }
+    with open(SAVE_FILE, "w") as f:
+        json.dump(data, f)
+    print(f"\n{Color.GREEN}{Icons.SAVE} Game saved successfully!{Color.END}")
+    play_sound("jingle")
+    time.sleep(1)
+
+def load_game():
+    if not os.path.exists(SAVE_FILE):
+        return None
+    with open(SAVE_FILE, "r") as f:
+        data = json.load(f)
+    state = GameState()
+    state.friendship = data["friendship"]
+    state.inventory = data["inventory"]
+    state.chapters_completed = data["chapters_completed"]
+    state.health = data["health"]
+    state.energy = data["energy"]
+    state.money = data["money"]
+    state.day = data["day"]
+    state.achievements = data["achievements"]
+    return state
+
+# ==================== GAME STATE & ART ====================
+
+class GameState:
+    def __init__(self):
+        self.friendship = 20
+        self.inventory = ["Old Map"]
+        self.chapters_completed = 0
+        self.health = 100
+        self.energy = 100
+        self.money = 10
+        self.day = 1
+        self.location = "Toad's House"
+        self.achievements = []
+
+def draw_frog():
+    print(f"{Color.GREEN}    (o)-(o)\n   /  _   \\\n   \\______/\n  /        \\{Color.END}")
+
+def draw_header(state):
+    clear_screen()
+    print(f"{Color.BLUE}{'═'*60}{Color.END}")
+    print(f"📍 {state.location} | {Icons.HEART} {state.health} | {Icons.ENERGY} {state.energy} | {Icons.COIN} {state.money}")
+    print(f"👥 Friendship: {state.friendship}/100 | Chapter: {state.chapters_completed}/40")
+    print(f"{Color.BLUE}{'═'*60}{Color.END}\n")
+
+# ==================== ACTIVITIES ====================
+
+def pond_shop(state):
+    state.location = "Turtle's General Store"
+    draw_header(state)
+    print("1. Fly Scone (5 Coins)\n2. Lucky Feather (15 Coins)\n3. Exit")
+    choice = input("\nBuy something? ")
+    if choice == "1" and state.money >= 5:
+        state.money -= 5
+        state.inventory.append("Fly Scone")
+        print("Delicious!")
+    return state
+
+def travel_animation():
+    print(f"\n{Color.CYAN}Walking to the next adventure...{Color.END}")
+    path = ["🚶", "🌿", "🚶", "🍄", "🚶", "🌻"]
+    for step in path:
+        sys.stdout.write(f"{step} ")
+        sys.stdout.flush()
+        time.sleep(0.7)
+    print("\n")
+
+# ==================== MAIN LOOP ====================
+
+def main():
+    clear_screen()
+    print(f"{Color.BOLD}{Color.GREEN}FROG & TOAD: THE ANIMATED ODYSSEY{Color.END}")
+    print("1. New Game\n2. Load Game")
+    
+    choice = input("\n> ")
+    if choice == "2":
+        state = load_game()
+        if not state:
+            print("No save file found. Starting new game...")
+            state = GameState()
+    else:
+        state = GameState()
+
+    while state.chapters_completed < 40:
+        state.location = "The Wild Woods"
+        draw_header(state)
+        
+        print(f"What should {Icons.FROG} and {Icons.TOAD} do?")
+        print(f"1. {Color.YELLOW}Explore further{Color.END}")
+        print(f"2. {Color.MAGENTA}Check Bag (Inventory){Color.END}")
+        print(f"3. {Color.CYAN}Go to Shop{Color.END}")
+        print(f"4. {Color.GREEN}Save Game{Color.END}")
+        
+        act = input("\nAction: ")
+        
+        if act == "4":
+            save_game(state)
+            continue
+        elif act == "2":
+            print(f"\nIn your bag: {', '.join(state.inventory)}")
+            input("Press Enter to close bag...")
+            continue
+        elif act == "3":
+            state = pond_shop(state)
+            continue
+        
+        # Main Adventure Logic
+        travel_animation()
+        
+        # Simple random event for demo - link back to your original 30+ events here
+        event_roll = random.random()
+        if event_roll > 0.5:
+            type_print("You found a cluster of wild berries!")
+            state.energy += 10
+        else:
+            type_print("Toad tripped over a root. Frog helped him up.")
+            state.friendship += 5
+        
+        state.chapters_completed += 1
+        time.sleep(1)
+
+    print(f"\n{Color.BOLD}THE END. You and Toad are the best of friends.{Color.END}")
+
+if __name__ == "__main__":
+    main()
